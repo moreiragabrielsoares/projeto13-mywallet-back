@@ -1,10 +1,11 @@
 {
   "name": "projeto13-mywallet-back",
+  "type": "module",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js"
+    "start": "nodemon ./src/index.js"
   },
   "keywords": [],
   "author": "",
