@@ -5,7 +5,7 @@ import { Router } from 'express';
 const router = Router();
 
 router.get('/mywallet', validateUser, getRegisters);
-router.post('/newincome', registerIncome);
-router.post('/newexpense', registerExpense);
+router.post('/newincome', validateUser, registerIncome);
+router.post('/newexpense', validateUser, registerExpense);
 
 export default router;
