@@ -1,4 +1,4 @@
-import { db } from '../db/mongo.js';
+import { db , objectId } from '../db/mongo.js';
 import joi from 'joi';
 import dayjs from 'dayjs'
 
@@ -6,7 +6,7 @@ import dayjs from 'dayjs'
 
 
 const registerSchema = joi.object({
-    value: joi.number().required(),
+    value: joi.string().required(),
     description: joi.string().required(),
 });
 
@@ -21,7 +21,20 @@ export async function getRegisters(req, res) {
     .find({ userId: new objectId(session.userId) })
     .toArray();
 
-    res.send(posts);
+    let netResult = 0;
+
+    for (let i = 0 ; i < registers.length ; i ++) {
+        let aux = parseFloat(registers[i].value.replace(",","."));
+        if (registers[i].type === "expense") {
+            netResult -= aux;
+        } else {
+            netResult += aux;
+        }
+    }
+
+    const response = {registers: registers, netResult: netResult};
+
+    res.send(response);
 
 };
 
@@ -38,18 +51,25 @@ export async function registerIncome(req, res) {
         return;
     }
 
-    const session = await db.collection('sessions').findOne({ token });
+    try {
 
-    if (!session) {
-        res.sendStatus(401);
+        const session = await db.collection('sessions').findOne({ token });
+
+        if (!session) {
+            res.sendStatus(401);
+            return;
+        }
+
+        const date = dayjs(Date.now()).format('DD/MM');
+
+        await db.collection('registers').insertOne({ ...register, userId: session.userId, type: "income", date: date });
+        res.status(201).send('Registro criado com sucesso');
         return;
+
+    } catch (error) {
+
+        res.sendStatus(500);
     }
-
-    const date = dayjs(Date.now()).format('DD/MM');
-
-    await db.collection('registers').insertOne({ ...register, userId: session.userId, type: "income", date: date });
-    res.status(201).send('Registro criado com sucesso');
-
 
 };
 
@@ -66,16 +86,24 @@ export async function registerExpense(req, res) {
         return;
     }
 
-    const session = await db.collection('sessions').findOne({ token });
+    try {
 
-    if (!session) {
-        res.sendStatus(401);
+        const session = await db.collection('sessions').findOne({ token });
+
+        if (!session) {
+            res.sendStatus(401);
+            return;
+        }
+
+        const date = dayjs(Date.now()).format('DD/MM');
+
+        await db.collection('registers').insertOne({ ...register, userId: session.userId, type: "expense", date: date });
+        res.status(201).send('Registro criado com sucesso');
         return;
+
+    } catch (error) {
+
+        res.sendStatus(500);
     }
-
-    const date = dayjs(Date.now()).format('DD/MM');
-
-    await db.collection('registers').insertOne({ ...register, userId: session.userId, type: "expense", date: date });
-    res.status(201).send('Registro criado com sucesso');
 
 };

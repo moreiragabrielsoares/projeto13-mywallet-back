@@ -4,17 +4,27 @@ async function validateUser(req, res, next) {
   const { authorization } = req.headers;
 
   const token = authorization?.replace('Bearer ', '');
-  
-  const session = await db.collection('sessions').findOne({ token });
 
-  if (!session) {
-    res.status(401).send('É necessário fazer login!');
-    return;
+  try {
+
+    const session = await db.collection('sessions').findOne({ token });
+    console.log(token);
+    console.log({ token });
+
+    if (!session) {
+      res.status(401).send('É necessário fazer login!');
+      return;
+    }
+
+    res.locals.session = session;
+
+    next();
+
+  } catch (error) {
+
+    res.sendStatus(500);
   }
-
-  res.locals.session = session;
-
-  next();
+  
 }
 
 export default validateUser;
