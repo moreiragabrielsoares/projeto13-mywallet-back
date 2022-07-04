@@ -25,17 +25,25 @@ export async function signUpUser(req, res) {
         return;
     }
 
-    const userDB = await db.collection('users').findOne({ email: user.email });
-    if (userDB) {
-        res.status(409).send('E-mail já cadastrado');
-        return;
+    try {
+
+        const userDB = await db.collection('users').findOne({ email: user.email });
+        if (userDB) {
+            res.status(409).send('E-mail já cadastrado');
+            return;
+        }
+
+        const encryptedPassword = bcrypt.hashSync(user.password, 10);
+        delete user.confirmPassword;
+
+        await db.collection('users').insertOne({ ...user, password: encryptedPassword });
+        res.status(201).send('Usuário criado com sucesso');
+
+    } catch (error) {
+        res.sendStatus(500);
     }
 
-    const encryptedPassword = bcrypt.hashSync(user.password, 10);
-    delete user.confirmPassword;
-
-    await db.collection('users').insertOne({ ...user, password: encryptedPassword });
-    res.status(201).send('Usuário criado com sucesso');
+    
 }
 
 export async function loginUser(req, res) {
@@ -54,22 +62,36 @@ export async function loginUser(req, res) {
         return;
     }
 
+    try {
 
-    const userDB = await db.collection('users').findOne({ email: user.email });
+        const userDB = await db.collection('users').findOne({ email: user.email });
 
-    if (userDB && bcrypt.compareSync(user.password, userDB.password)) {
-        const token = uuid();
+        if (userDB && bcrypt.compareSync(user.password, userDB.password)) {
+            const token = uuid();
 
-        await db.collection('sessions').insertOne({
-        token,
-        userId: userDB._id
-        });
+            let userFirstName = userDB.name;
+            userFirstName = userFirstName.trim();
+            let spacePosition = userFirstName.indexOf(" ");
+            if (spacePosition > -1) {
+                userFirstName = userFirstName.slice(0 , spacePosition);
+            }
+            
 
-        res.status(201).send({ token: token, name: userDB.name });
-        return;
+            await db.collection('sessions').insertOne({
+            token,
+            userId: userDB._id
+            });
 
-    } else {
-        res.status(401).send('Senha ou email incorretos!');
-        return;
+            res.status(201).send({ token: token, name: userFirstName });
+            return;
+
+        } else {
+            res.status(401).send('Senha ou email incorretos!');
+            return;
+        }
+
+    } catch (error) {
+        res.sendStatus(500);
     }
+
 }

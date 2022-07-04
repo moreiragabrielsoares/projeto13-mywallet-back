@@ -16,35 +16,42 @@ export async function getRegisters(req, res) {
 
     const session = res.locals.session;
 
-    const registers = await db
-    .collection('registers')
-    .find({ userId: new objectId(session.userId) })
-    .toArray();
+    try {
 
-    let netResult = 0;
-    let typeNetResult = "";
+        const registers = await db
+            .collection('registers')
+            .find({ userId: new objectId(session.userId) })
+            .toArray()
+        ;
 
-    for (let i = 0 ; i < registers.length ; i ++) {
-        let aux = parseFloat(registers[i].value.replace(",","."));
-        if (registers[i].type === "expense") {
-            netResult -= aux;
-        } else {
-            netResult += aux;
+        let netResult = 0;
+        let typeNetResult = "";
+
+        for (let i = 0 ; i < registers.length ; i ++) {
+            let aux = parseFloat(registers[i].value.replace(",","."));
+            if (registers[i].type === "expense") {
+                netResult -= aux;
+            } else {
+                netResult += aux;
+            }
         }
+
+        if (netResult >=0) {
+            typeNetResult = "positive";
+        } else {
+            typeNetResult = "negative";
+        }
+
+        netResult = (Math.round(netResult * 100) / 100).toFixed(2);
+        netResult = netResult.replace(".", ",");
+
+        const response = {registers: registers , netResult: netResult , typeNetResult: typeNetResult};
+
+        res.send(response);
+
+    } catch (error) {
+        res.sendStatus(500);
     }
-
-    if (netResult >=0) {
-        typeNetResult = "positive";
-    } else {
-        typeNetResult = "negative";
-    }
-
-    netResult = (Math.round(netResult * 100) / 100).toFixed(2);
-    netResult = netResult.replace(".", ",");
-
-    const response = {registers: registers , netResult: netResult , typeNetResult: typeNetResult};
-
-    res.send(response);
 
 };
 
@@ -77,7 +84,6 @@ export async function registerIncome(req, res) {
         return;
 
     } catch (error) {
-
         res.sendStatus(500);
     }
 
@@ -112,7 +118,6 @@ export async function registerExpense(req, res) {
         return;
 
     } catch (error) {
-
         res.sendStatus(500);
     }
 
