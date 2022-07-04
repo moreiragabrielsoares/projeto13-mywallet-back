@@ -22,6 +22,7 @@ export async function getRegisters(req, res) {
     .toArray();
 
     let netResult = 0;
+    let typeNetResult = "";
 
     for (let i = 0 ; i < registers.length ; i ++) {
         let aux = parseFloat(registers[i].value.replace(",","."));
@@ -32,7 +33,16 @@ export async function getRegisters(req, res) {
         }
     }
 
-    const response = {registers: registers, netResult: netResult};
+    if (netResult >=0) {
+        typeNetResult = "positive";
+    } else {
+        typeNetResult = "negative";
+    }
+
+    netResult = (Math.round(netResult * 100) / 100).toFixed(2);
+    netResult = netResult.replace(".", ",");
+
+    const response = {registers: registers , netResult: netResult , typeNetResult: typeNetResult};
 
     res.send(response);
 

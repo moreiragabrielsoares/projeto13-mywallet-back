@@ -8,8 +8,6 @@ async function validateUser(req, res, next) {
   try {
 
     const session = await db.collection('sessions').findOne({ token });
-    console.log(token);
-    console.log({ token });
 
     if (!session) {
       res.status(401).send('É necessário fazer login!');
